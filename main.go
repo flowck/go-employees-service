@@ -7,55 +7,120 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type Employee struct {
-	Name string `json:"name""`
+	Id   string `json:"id"`
+	Name string `json:"name"`
 	Role string `json:"role"`
 }
 
 var employeesList []Employee
 
-func getEmployeesHandler(res http.ResponseWriter, req *http.Request) {
-	switch req.Method {
+func init() {
+	employeesList = make([]Employee, 0)
+}
+
+func middleware(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		handler.ServeHTTP(w, r)
+	})
+}
+
+func getEmployees(w http.ResponseWriter, r *http.Request) {
+	employees, err := json.Marshal(findEmployees())
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Fatal(err)
+		return
+	}
+
+	w.Write(employees)
+}
+
+func getEmployee(w http.ResponseWriter, r *http.Request) {
+	urlPathSegments := strings.Split(r.URL.Path, "employees/")
+	employeeId := urlPathSegments[len(urlPathSegments)-1]
+
+	employee, err := findEmployee(employeeId)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	response, err := json.Marshal(employee)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Fatal(err)
+		return
+	}
+
+	w.Write(response)
+}
+
+func createEmployee(w http.ResponseWriter, r *http.Request) {
+	var employee Employee
+	body, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Fatal(err)
+		return
+	}
+
+	err = json.Unmarshal([]byte(body), &employee)
+
+	if err != nil {
+		log.Fatal(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	employee = saveEmployee(employee)
+	response, err := json.Marshal(employee)
+
+	if err != nil {
+		log.Fatal(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	employeesList = append(employeesList, employee)
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(response))
+}
+
+func employeesHandlers(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
 	case http.MethodGet:
-		employeesResponse, err := json.Marshal(employeesList)
-
-		if err != nil {
-			res.WriteHeader(http.StatusInternalServerError)
-			log.Fatal(err)
-			return
-		}
-
-		res.Header().Set("Content-Type", "application/json")
-		res.Write(employeesResponse)
+		getEmployees(w, r)
+		return
 
 	case http.MethodPost:
-		var newEmployee Employee
-		body, err := ioutil.ReadAll(req.Body)
-
-		if err != nil {
-			res.WriteHeader(http.StatusBadRequest)
-			log.Fatal(err)
-			return
-		}
-
-		err = json.Unmarshal([]byte(body), &newEmployee)
-
-		if err != nil {
-			log.Fatal(err)
-			res.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		employeesList = append(employeesList, newEmployee)
-
-		res.WriteHeader(http.StatusCreated)
-		res.Write([]byte("Success"))
+		createEmployee(w, r)
+		return
 
 	default:
-		res.WriteHeader(404)
-		res.Write([]byte("Not found"))
+		w.WriteHeader(404)
+		w.Write([]byte("Not found"))
+	}
+}
+
+func employeeHandlers(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		getEmployee(w, r)
+		return
+
+	default:
+		w.WriteHeader(404)
+		w.Write([]byte("Not found"))
 	}
 }
 
@@ -65,7 +130,8 @@ func main() {
 	SrvAddress := Host + ":" + strconv.Itoa(Port)
 
 	// Route handlers
-	http.HandleFunc("/employees", getEmployeesHandler)
+	http.Handle("/employees", middleware(http.HandlerFunc(employeesHandlers)))
+	http.Handle("/employees/", middleware(http.HandlerFunc(employeeHandlers)))
 
 	fmt.Println("Server is up and running at", SrvAddress)
 	err := http.ListenAndServe(SrvAddress, nil)
