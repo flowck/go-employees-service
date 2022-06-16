@@ -13,7 +13,7 @@ Implementing CRUD-like operations to manage employees.
 ## Non-functional requirements
 
 - In-memory data persistence
-- Dockerize the app
+- ~~Dockerize the app~~
 
 ## How to run it?
 
