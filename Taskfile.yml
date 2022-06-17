@@ -1,0 +1,27 @@
+version: '3'
+
+env:
+  ENV: test
+
+dotenv: ['.env', '{{.ENV}}/.env.', '{{.HOME}}/.env']
+
+tasks:
+  build:
+    cmds:
+      - go build -v -i main.go
+
+  goose:down:
+    cmds:
+      - goose -dir ./sql down
+
+  goose:up:
+    cmds:
+      - goose -dir ./sql down
+
+  docker:up:
+    cmds:
+      - docker-compose up -d
+
+  docker:down:
+    cmds:
+      - docker-compose down

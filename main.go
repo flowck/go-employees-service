@@ -1,8 +1,14 @@
 package main
 
 import (
+	"employees-service/models"
 	"encoding/json"
 	"fmt"
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
+	_ "github.com/lib/pq"
+	"github.com/pressly/goose/v3"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -30,7 +36,10 @@ func middleware(handler http.Handler) http.Handler {
 }
 
 func getEmployees(w http.ResponseWriter, r *http.Request) {
-	employees, err := json.Marshal(findEmployees())
+	ctx := r.Context()
+	result, err := models.Users(qm.Limit(5)).All(ctx, DB)
+
+	employees, err := json.Marshal(result)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -124,17 +133,38 @@ func employeeHandlers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type Config struct {
+	DbDriver string `envconfig:"DB_DRIVER" required:"true"`
+	DbUrl    string `envconfig:"DB_URL" required:"true"`
+	PORT     int    `envconfig:"PORT" required:"true"`
+	HOST     string `envconfig:"HOST" required:"true"`
+}
+
 func main() {
-	Port := 4000
-	Host := "localhost"
-	SrvAddress := Host + ":" + strconv.Itoa(Port)
+	if err := godotenv.Load(); err != nil {
+		panic(err)
+	}
+
+	config := Config{}
+	err := envconfig.Process("", &config)
+	SrvAddress := fmt.Sprintf("%s:%s", config.HOST, strconv.Itoa(config.PORT))
+
+	if err := goose.SetDialect("postgres"); err != nil {
+		panic(err)
+	}
+
+	InitDatabase(&config)
+
+	if err := goose.Up(DB, "sql"); err != nil {
+		panic(err)
+	}
 
 	// Route handlers
 	http.Handle("/employees", middleware(http.HandlerFunc(employeesHandlers)))
 	http.Handle("/employees/", middleware(http.HandlerFunc(employeeHandlers)))
 
 	fmt.Println("Server is up and running at", SrvAddress)
-	err := http.ListenAndServe(SrvAddress, nil)
+	err = http.ListenAndServe(SrvAddress, nil)
 
 	if err != nil {
 		log.Fatal(err)
