@@ -12,8 +12,10 @@ Implementing CRUD-like operations to manage employees.
 
 ## Non-functional requirements
 
-- In-memory data persistence
-- ~~Dockerize the app~~
+- [Docker](./Dockerfile)
+- SQL Migrations with [Goose](https://github.com/pressly/goose)
+- ORM with [SQL Boiler](https://github.com/volatiletech/sqlboiler)
+- Task management with [Task](https://github.com/go-task/task)
 
 ## How to run it?
 
