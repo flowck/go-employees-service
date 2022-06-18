@@ -4,6 +4,8 @@ import (
 	"employees-service/models"
 	"encoding/json"
 	"fmt"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	_ "github.com/lib/pq"
@@ -13,7 +15,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 type Employee struct {
@@ -28,7 +29,7 @@ func init() {
 	employeesList = make([]Employee, 0)
 }
 
-func middleware(handler http.Handler) http.Handler {
+func AppMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		handler.ServeHTTP(w, r)
@@ -51,8 +52,7 @@ func getEmployees(w http.ResponseWriter, r *http.Request) {
 }
 
 func getEmployee(w http.ResponseWriter, r *http.Request) {
-	urlPathSegments := strings.Split(r.URL.Path, "employees/")
-	employeeId := urlPathSegments[len(urlPathSegments)-1]
+	employeeId := chi.URLParam(r, "employeeId")
 
 	employee, err := findEmployee(employeeId)
 
@@ -105,34 +105,6 @@ func createEmployee(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(response))
 }
 
-func employeesHandlers(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		getEmployees(w, r)
-		return
-
-	case http.MethodPost:
-		createEmployee(w, r)
-		return
-
-	default:
-		w.WriteHeader(404)
-		w.Write([]byte("Not found"))
-	}
-}
-
-func employeeHandlers(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		getEmployee(w, r)
-		return
-
-	default:
-		w.WriteHeader(404)
-		w.Write([]byte("Not found"))
-	}
-}
-
 type Config struct {
 	DbDriver string `envconfig:"DB_DRIVER" required:"true"`
 	DbUrl    string `envconfig:"DB_URL" required:"true"`
@@ -148,6 +120,7 @@ func main() {
 	config := Config{}
 	err := envconfig.Process("", &config)
 	SrvAddress := fmt.Sprintf("%s:%s", config.HOST, strconv.Itoa(config.PORT))
+	r := chi.NewRouter()
 
 	if err := goose.SetDialect("postgres"); err != nil {
 		panic(err)
@@ -159,12 +132,19 @@ func main() {
 		panic(err)
 	}
 
-	// Route handlers
-	http.Handle("/employees", middleware(http.HandlerFunc(employeesHandlers)))
-	http.Handle("/employees/", middleware(http.HandlerFunc(employeeHandlers)))
+	r.Use(middleware.Logger)
+	r.Use(AppMiddleware)
+	r.Route("/employees", func(r chi.Router) {
+		r.Get("/", getEmployees)
+		r.Post("/", createEmployee)
+	})
+
+	r.Route("/employees/{employeeId}", func(r chi.Router) {
+		r.Get("/", getEmployee)
+	})
 
 	fmt.Println("Server is up and running at", SrvAddress)
-	err = http.ListenAndServe(SrvAddress, nil)
+	err = http.ListenAndServe(SrvAddress, r)
 
 	if err != nil {
 		log.Fatal(err)
