@@ -8,8 +8,7 @@ dotenv: ['.env', '{{.ENV}}/.env.', '{{.HOME}}/.env']
 tasks:
   build:
     cmds:
-      - go build -v -i main.go
-
+      - go build ./
   goose:down:
     cmds:
       - goose -dir ./sql down
