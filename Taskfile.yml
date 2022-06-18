@@ -6,6 +6,10 @@ env:
 dotenv: ['.env', '{{.ENV}}/.env.', '{{.HOME}}/.env']
 
 tasks:
+  run:dev
+    cmds:
+      - reflex -r '\.go' -s -- sh -c 'go run main.go'
+
   build:
     cmds:
       - go build ./
@@ -15,7 +19,7 @@ tasks:
 
   goose:up:
     cmds:
-      - goose -dir ./sql down
+      - goose -dir ./sql up
 
   docker:up:
     cmds:
@@ -24,3 +28,6 @@ tasks:
   docker:down:
     cmds:
       - docker-compose down
+  sqlboiler:
+    cmds:
+      - sqlboiler psql

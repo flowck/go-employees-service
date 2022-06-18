@@ -12,52 +12,52 @@ import "testing"
 // It does NOT run each operation group in parallel.
 // Separating the tests thusly grants avoidance of Postgres deadlocks.
 func TestParent(t *testing.T) {
-	t.Run("Users", testUsers)
+	t.Run("Employees", testEmployees)
 }
 
 func TestDelete(t *testing.T) {
-	t.Run("Users", testUsersDelete)
+	t.Run("Employees", testEmployeesDelete)
 }
 
 func TestQueryDeleteAll(t *testing.T) {
-	t.Run("Users", testUsersQueryDeleteAll)
+	t.Run("Employees", testEmployeesQueryDeleteAll)
 }
 
 func TestSliceDeleteAll(t *testing.T) {
-	t.Run("Users", testUsersSliceDeleteAll)
+	t.Run("Employees", testEmployeesSliceDeleteAll)
 }
 
 func TestExists(t *testing.T) {
-	t.Run("Users", testUsersExists)
+	t.Run("Employees", testEmployeesExists)
 }
 
 func TestFind(t *testing.T) {
-	t.Run("Users", testUsersFind)
+	t.Run("Employees", testEmployeesFind)
 }
 
 func TestBind(t *testing.T) {
-	t.Run("Users", testUsersBind)
+	t.Run("Employees", testEmployeesBind)
 }
 
 func TestOne(t *testing.T) {
-	t.Run("Users", testUsersOne)
+	t.Run("Employees", testEmployeesOne)
 }
 
 func TestAll(t *testing.T) {
-	t.Run("Users", testUsersAll)
+	t.Run("Employees", testEmployeesAll)
 }
 
 func TestCount(t *testing.T) {
-	t.Run("Users", testUsersCount)
+	t.Run("Employees", testEmployeesCount)
 }
 
 func TestHooks(t *testing.T) {
-	t.Run("Users", testUsersHooks)
+	t.Run("Employees", testEmployeesHooks)
 }
 
 func TestInsert(t *testing.T) {
-	t.Run("Users", testUsersInsert)
-	t.Run("Users", testUsersInsertWhitelist)
+	t.Run("Employees", testEmployeesInsert)
+	t.Run("Employees", testEmployeesInsertWhitelist)
 }
 
 // TestToOne tests cannot be run in parallel
@@ -101,21 +101,21 @@ func TestToManySet(t *testing.T) {}
 func TestToManyRemove(t *testing.T) {}
 
 func TestReload(t *testing.T) {
-	t.Run("Users", testUsersReload)
+	t.Run("Employees", testEmployeesReload)
 }
 
 func TestReloadAll(t *testing.T) {
-	t.Run("Users", testUsersReloadAll)
+	t.Run("Employees", testEmployeesReloadAll)
 }
 
 func TestSelect(t *testing.T) {
-	t.Run("Users", testUsersSelect)
+	t.Run("Employees", testEmployeesSelect)
 }
 
 func TestUpdate(t *testing.T) {
-	t.Run("Users", testUsersUpdate)
+	t.Run("Employees", testEmployeesUpdate)
 }
 
 func TestSliceUpdateAll(t *testing.T) {
-	t.Run("Users", testUsersSliceUpdateAll)
+	t.Run("Employees", testEmployeesSliceUpdateAll)
 }

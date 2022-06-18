@@ -1,6 +1,8 @@
-package main
+package infra
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 var DB *sql.DB
 
