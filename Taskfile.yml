@@ -6,7 +6,7 @@ env:
 dotenv: ['.env', '{{.ENV}}/.env.', '{{.HOME}}/.env']
 
 tasks:
-  run:dev
+  run:dev:
     cmds:
       - reflex -r '\.go' -s -- sh -c 'go run main.go'
 
